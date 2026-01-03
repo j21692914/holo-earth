@@ -2,52 +2,68 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>全球全息资产指挥中心</title>
+    <title>GLOBAL ASSET COMMAND V2</title>
     <style>
-        body { margin: 0; padding: 0; background-color: #000000; overflow: hidden; font-family: 'Courier New', Courier, monospace; }
+        body { margin: 0; padding: 0; background-color: #000000; overflow: hidden; font-family: 'Segoe UI', 'Roboto', monospace; }
         
-        /* 全息 HUD 界面样式 */
-        #hud-overlay {
+        /* 全息 HUD 界面 - 顶栏 */
+        #hud-top {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 20px; left: 20px;
             z-index: 100;
-            color: #00ffcc;
-            pointer-events: none; /* 让鼠标穿透UI操作地球 */
+            pointer-events: none;
         }
         
         h1 {
-            margin: 0;
-            font-size: 24px;
-            text-shadow: 0 0 10px #00ffcc;
-            letter-spacing: 2px;
+            margin: 0; color: #00ffcc; font-size: 28px; letter-spacing: 4px;
+            text-shadow: 0 0 20px #00ffcc; font-weight: 300;
         }
+        .subtitle { color: #0088aa; font-size: 12px; letter-spacing: 2px; margin-top: 5px; }
 
-        .panel {
-            background: rgba(0, 20, 40, 0.6);
-            border: 1px solid #00ffcc;
-            border-radius: 4px;
-            padding: 15px;
-            margin-top: 10px;
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
-            backdrop-filter: blur(5px);
-            width: 250px;
-        }
-
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
-        .dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .dot-air { background-color: #ff0055; box-shadow: 0 0 5px #ff0055; }
-        .dot-sea { background-color: #00ccff; box-shadow: 0 0 5px #00ccff; }
-        .dot-land { background-color: #ffcc00; box-shadow: 0 0 5px #ffcc00; }
-
-        /* 扫描线特效 */
-        .scan-line {
+        /* 左下角状态栏 */
+        #hud-bottom {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 204, 0.05) 51%);
-            background-size: 100% 4px;
+            bottom: 20px; left: 20px;
+            color: #00ffcc; font-size: 12px;
+            background: rgba(0, 20, 30, 0.7);
+            padding: 15px;
+            border-left: 3px solid #00ffcc;
+            backdrop-filter: blur(4px);
             pointer-events: none;
-            z-index: 99;
+        }
+
+        /* 屏幕扫描线特效 */
+        .scan-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 204, 0.02) 51%);
+            background-size: 100% 4px;
+            pointer-events: none; z-index: 99;
+        }
+
+        /* --- 交互式资产标记 (点击后出现的卡片) --- */
+        .asset-marker {
+            background: rgba(0, 10, 20, 0.85);
+            border: 1px solid #00ffcc;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            width: 150px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+            transform: translate(-50%, -100%); /* 让卡片位于点击点上方 */
+            margin-top: -15px;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none; /* 防止遮挡地球操作 */
+        }
+
+        .marker-title { color: #00ffcc; font-weight: bold; border-bottom: 1px solid rgba(0, 255, 204, 0.3); padding-bottom: 4px; margin-bottom: 4px; }
+        .marker-info { color: #aaa; font-size: 10px; }
+        .marker-line { position: absolute; bottom: -20px; left: 50%; width: 1px; height: 20px; background: #00ffcc; }
+        .marker-dot { position: absolute; bottom: -24px; left: 50%; width: 4px; height: 4px; background: #fff; border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: translate(-50%, -80%) scale(0.5); }
+            to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
         }
     </style>
     
@@ -56,136 +72,174 @@
 </head>
 <body>
 
-    <div id="hud-overlay">
-        <h1>GLOBAL ASSET COMMAND</h1>
-        <div class="panel">
-            <div style="border-bottom: 1px solid #00ffcc; margin-bottom: 8px; padding-bottom: 5px;">SYSTEM STATUS: ONLINE</div>
-            <div class="stat-row">
-                <span><span class="dot dot-air"></span>AIR UNIT (Air)</span>
-                <span id="count-air">LOADING...</span>
-            </div>
-            <div class="stat-row">
-                <span><span class="dot dot-sea"></span>NAVAL UNIT (Sea)</span>
-                <span id="count-sea">LOADING...</span>
-            </div>
-            <div class="stat-row">
-                <span><span class="dot dot-land"></span>BASE UNIT (Land)</span>
-                <span id="count-land">LOADING...</span>
-            </div>
-        </div>
+    <div id="hud-top">
+        <h1>GLOBAL DEFENSE GRID</h1>
+        <div class="subtitle">SYSTEM: ONLINE | SATELLITE LINK: ESTABLISHED</div>
+    </div>
+
+    <div id="hud-bottom">
+        <div>ORBITAL UNITS: <span id="sat-count">0</span></div>
+        <div>ACTIVE SIGNALS: <span id="sig-count">0</span></div>
+        <div style="margin-top:5px; color:#aaa;">>> CLICK MAP TO DEPLOY ASSET <<</div>
     </div>
 
     <div class="scan-line"></div>
-
     <div id="globeViz"></div>
 
     <script>
-        // --- 1. 生成模拟数据 (实际项目中这里替换为你的后端API) ---
-        
-        const N_PATHS = 15; // 航线数量
-        const N_AIR = 30;   // 飞机数量
-        const N_SEA = 20;   // 船只数量
-        const N_LAND = 15;  // 陆地基地数量
+        // --- 1. 数据生成逻辑 ---
 
-        // 随机生成坐标的辅助函数
-        const genRandomCoords = () => ({
-            lat: (Math.random() - 0.5) * 160, // 避开极地
-            lng: (Math.random() - 0.5) * 360
-        });
-
-        // 生成空域资产 (飞机 - 动态点)
-        const airData = [...Array(N_AIR).keys()].map(() => ({
-            startLat: (Math.random() - 0.5) * 160,
-            startLng: (Math.random() - 0.5) * 360,
-            endLat: (Math.random() - 0.5) * 160,
-            endLng: (Math.random() - 0.5) * 360,
-            color: [['#ff0055', '#ff9900'][Math.round(Math.random())]] // 红色或橙色
-        }));
-
-        // 生成海域资产 (船只 - 波纹圈)
-        const seaData = [...Array(N_SEA).keys()].map(() => ({
-            lat: (Math.random() - 0.5) * 140,
+        // 卫星数据 (绕地球飞)
+        const N_SATS = 8;
+        const satellites = [...Array(N_SATS).keys()].map(() => ({
+            lat: (Math.random() - 0.5) * 180,
             lng: (Math.random() - 0.5) * 360,
-            maxR: Math.random() * 20 + 3,
-            propagationSpeed: (Math.random() - 0.5) * 20 + 1,
-            repeatPeriod: Math.random() * 2000 + 200
+            alt: 0.3 + Math.random() * 0.4, // 轨道高度
+            speed: (Math.random() * 0.5 + 0.1) * (Math.random() > 0.5 ? 1 : -1), // 飞行速度
+            color: Math.random() > 0.5 ? '#ff0055' : '#00ccff'
         }));
 
-        // 生成陆地资产 (基地 - 光柱)
-        const landData = [...Array(N_LAND).keys()].map(() => ({
-            lat: (Math.random() - 0.5) * 150,
+        // 雷达波数据 (海域随机出现)
+        const N_RINGS = 10;
+        const ringsData = [...Array(N_RINGS).keys()].map(() => ({
+            lat: (Math.random() - 0.5) * 120,
             lng: (Math.random() - 0.5) * 360,
-            value: Math.random() * 1,
-            color: '#ffcc00'
+            maxR: Math.random() * 15 + 5,
+            propagationSpeed: (Math.random() - 0.5) * 2 + 1,
+            repeatPeriod: Math.random() * 2000 + 1000
         }));
 
-        // 更新 UI 数据
-        document.getElementById('count-air').innerText = N_AIR + " ACTIVE";
-        document.getElementById('count-sea').innerText = N_SEA + " DEPLOYED";
-        document.getElementById('count-land').innerText = N_LAND + " SECURE";
+        // 用户点击生成的资产列表
+        let userAssets = [];
 
-        // --- 2. 初始化全息地球 ---
+        // 资产类型库
+        const assetTypes = [
+            { name: "GULFSTREAM G700", type: "AIR", color: "#00ffcc" },
+            { name: "AEGIS DESTROYER", type: "SEA", color: "#00ccff" },
+            { name: "SECURE BUNKER", type: "LAND", color: "#ffcc00" },
+            { name: "INTERCEPTOR", type: "AIR", color: "#ff0055" }
+        ];
 
-        const world = Globe()
+        document.getElementById('sat-count').innerText = N_SATS;
+
+        // --- 2. 初始化地球 ---
+
+        const globe = Globe()
             (document.getElementById('globeViz'))
             
-            // 基础外观 - 全息夜景风
-            .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg') // 夜景贴图
-            .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png') // 地形凹凸
-            .backgroundColor('#000000') // 纯黑背景
-            .atmosphereColor('#00ffcc') // 大气层颜色：青色
-            .atmosphereAltitude(0.2)    // 大气层厚度
+            // 外观材质
+            .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+            .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+            .backgroundColor('#000000')
+            .atmosphereColor('#0044ff') // 深蓝色大气
+            .atmosphereAltitude(0.25)
             
-            // --- 陆地资产 (光柱) ---
-            .pointsData(landData)
-            .pointAltitude('value')
-            .pointColor('color')
-            .pointRadius(0.5)
-            .pointsMerge(true)
-            
-            // --- 空域资产 (飞行的弧线) ---
-            .arcsData(airData)
-            .arcColor('color')
-            .arcDashLength(0.4)
-            .arcDashGap(2)
-            .arcDashInitialGap(() => Math.random())
-            .arcDashAnimateTime(2000) // 动画速度
-            .arcStroke(0.5)
-            
-            // --- 海域资产 (雷达波纹) ---
-            .ringsData(seaData)
-            .ringColor(() => t => `rgba(0, 204, 255, ${1-t})`) // 青色淡出
+            // --- 雷达波纹 (海域扫描) ---
+            .ringsData(ringsData)
+            .ringColor(() => t => `rgba(0, 150, 255, ${1-t})`)
             .ringMaxRadius('maxR')
             .ringPropagationSpeed('propagationSpeed')
-            .ringRepeatPeriod('repeatPeriod');
+            .ringRepeatPeriod('repeatPeriod')
 
-        // --- 3. 配置交互和自动旋转 ---
+            // --- 卫星系统 (3D物体) ---
+            .objectsData(satellites)
+            .objectLat('lat')
+            .objectLng('lng')
+            .objectAltitude('alt')
+            .objectLabel('name')
+            .objectThreeObject(d => {
+                // 创建一个简单的卫星模型 (球体+环)
+                const group = new THREE.Group();
+                
+                // 核心
+                const mesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(1, 16, 16),
+                    new THREE.MeshLambertMaterial({ color: d.color, emissive: d.color, emissiveIntensity: 0.8 })
+                );
+                group.add(mesh);
+                
+                // 轨迹线 (视觉装饰)
+                const ring = new THREE.Mesh(
+                    new THREE.TorusGeometry(2, 0.1, 8, 20),
+                    new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 0.3, transparent: true })
+                );
+                ring.rotation.x = Math.PI / 2;
+                group.add(ring);
+
+                return group;
+            })
+
+            // --- 交互式 HTML 标记 (点击生成的资产) ---
+            .htmlElementsData(userAssets)
+            .htmlLat('lat')
+            .htmlLng('lng')
+            .htmlElement(d => {
+                const el = document.createElement('div');
+                el.className = 'asset-marker';
+                el.innerHTML = `
+                    <div class="marker-title">${d.asset.name}</div>
+                    <div class="marker-info">TYPE: ${d.asset.type}</div>
+                    <div class="marker-info">COORDS: ${d.lat.toFixed(2)}, ${d.lng.toFixed(2)}</div>
+                    <div class="marker-line"></div>
+                    <div class="marker-dot"></div>
+                `;
+                return el;
+            })
+
+            // --- 点击交互事件 ---
+            .onGlobeClick(({ lat, lng }) => {
+                // 1. 随机选择一种资产
+                const randomAsset = assetTypes[Math.floor(Math.random() * assetTypes.length)];
+                
+                // 2. 添加到数据列表
+                userAssets.push({ lat, lng, asset: randomAsset, id: Date.now() });
+                
+                // 3. 刷新地球的 HTML 层
+                globe.htmlElementsData([...userAssets]);
+                
+                // 4. 更新UI计数
+                document.getElementById('sig-count').innerText = userAssets.length;
+
+                // 5. 稍微移动视角看向点击点 (丝滑过渡)
+                const currentPos = globe.pointOfView();
+                globe.pointOfView({ lat: lat, lng: lng, altitude: currentPos.altitude }, 1000);
+            });
+
+        // --- 3. 动画循环 (让卫星动起来) ---
         
-        // 设置初始视角
-        world.controls().autoRotate = true; // 开启自动旋转
-        world.controls().autoRotateSpeed = 0.6; // 旋转速度
-        world.pointOfView({ lat: 20, lng: 100, altitude: 2.0 }); // 初始看向亚洲附近
-
-        // --- 4. 添加星空背景 (增强沉浸感) ---
-        const scene = world.scene();
-        const starGeometry = new THREE.BufferGeometry();
-        const starMaterial = new THREE.PointsMaterial({color: 0xffffff});
-        const starCount = 2000;
-        const starVertices = [];
-        for(let i=0;i<starCount;i++) {
-            const x = (Math.random() - 0.5) * 2000;
-            const y = (Math.random() - 0.5) * 2000;
-            const z = (Math.random() - 0.5) * 2000;
-            starVertices.push(x,y,z);
+        // 增加星空背景
+        const scene = globe.scene();
+        const starGeo = new THREE.BufferGeometry();
+        const starMat = new THREE.PointsMaterial({color: 0xffffff, size: 0.5});
+        const starVerts = [];
+        for(let i=0; i<3000; i++) {
+            const x = (Math.random() - 0.5) * 4000;
+            const y = (Math.random() - 0.5) * 4000;
+            const z = (Math.random() - 0.5) * 4000;
+            starVerts.push(x,y,z);
         }
-        starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-        const stars = new THREE.Points(starGeometry, starMaterial);
-        scene.add(stars);
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starVerts, 3));
+        scene.add(new THREE.Points(starGeo, starMat));
 
-        // --- 5. 响应窗口大小变化 ---
+        // 渲染循环
+        (function tick() {
+            // 更新卫星位置
+            satellites.forEach(sat => {
+                sat.lng += sat.speed; 
+            });
+            globe.objectsData([...satellites]); // 刷新卫星位置
+
+            // 地球自转 (缓慢)
+            globe.controls().autoRotate = true;
+            globe.controls().autoRotateSpeed = 0.3;
+
+            requestAnimationFrame(tick);
+        })();
+
+        // 窗口自适应
         window.addEventListener('resize', () => {
-            world.width(window.innerWidth);
-            world.height(window.innerHeight);
+            globe.width(window.innerWidth);
+            globe.height(window.innerHeight);
         });
 
     </script>
